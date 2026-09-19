@@ -7,6 +7,9 @@ function preload() {
   this.load.image("mudDrop", "https://i.imgur.com/5mCiDME.png")
   this.load.image("Mudom", "https://i.imgur.com/YRxysAd.png")
   this.load.image("mudBomb", "https://i.imgur.com/1Gd1OX7.png")
+  this.load.image("mukPlatform", "https://i.imgur.com/7eENJbX.png")
+  this.load.image("mukDownPlatform", "https://i.imgur.com/RzeN6bR.png")
+  this.load.image("mukFloor", "https://i.imgur.com/kEtDfHK.png")
                   }
 
 function create() {
@@ -17,20 +20,26 @@ this.cameras.main.setBounds(0, 0, 176000, 4000);
   this.player.setCollideWorldBounds(true)
   this.player.health = 5
   
+  this.player.body.setSize(18, 26); // Shrinks the physics box to ignore empty pixels
+this.player.body.setOffset(7, 6);
+  
+  this.player.body.setMaxVelocity(800, 2000); // Prevents gravity from pushing him too deep on high falls
+this.player.body.setFriction(0, 0);  
+  
   this.cameras.main.startFollow(this.player);
 
   this.player.setBounce(0.1)
   
   this.floorGroup = this.physics.add.staticGroup();
   
-  for (let i = 0; i < 55472; i++) {
+  for (let i = 0; i < 3348; i++) {
     this.floorGroup
         .create(i * 64 + 16, 700, "floor")
         .setScale(3)
         .refreshBody();
 }
   
-  for (let platforms = 0; platforms < 141; platforms++) {
+  for (let platforms = 0; platforms < 484; platforms++) {
     let platform = this.physics.add.staticImage(
         1400 + platforms * 496,
         360,
@@ -41,7 +50,7 @@ this.cameras.main.setBounds(0, 0, 176000, 4000);
     this.physics.add.collider(this.player, platform)
   }
   
-  for (let upPlatforms = 0; upPlatforms < 140; upPlatforms++) {
+  for (let upPlatforms = 0; upPlatforms < 484; upPlatforms++) {
     let platform7 = this.physics.add.staticImage(
          1600 + upPlatforms * 496,
          300,
@@ -52,7 +61,7 @@ this.cameras.main.setBounds(0, 0, 176000, 4000);
     this.physics.add.collider(this.player, platform7)
   }
   
-  for (let mudCrystals = 0; mudCrystals < 83; mudCrystals++) {
+  for (let mudCrystals = 0; mudCrystals < 144; mudCrystals++) {
     let mudCrystal1 = this.add.image(2000 + mudCrystals * 2000,
         610,
         "mudCrystal"
@@ -60,10 +69,11 @@ this.cameras.main.setBounds(0, 0, 176000, 4000);
   }
   
   this.waterfall = this.add.tileSprite(7000, 250, 128, 500, 'mudDrop').setScale(2);
+  this.waterfall.setTileScale(0.4, 0.4);
   
   
 
- this.mudom = this.physics.add.sprite(166416, 300, 'Mudom');
+ this.mudom = this.physics.add.sprite(288000, 300, 'Mudom');
 this.mudom.setScale(5);
 this.mudom.setCollideWorldBounds(true);
 this.mudom.health = 10;
@@ -74,7 +84,110 @@ this.mudom.health = 10;
   this.mudBombsThrown = 0;
 this.mudBomb = null;
   
+  this.mudom.setInteractive();
+
+// 2. Set up the click counter on the boss
+this.mudom.clicksTaken = 0;
+
+// 3. Listen for pointer (mouse click or screen tap) events on Mudom
+this.mudom.on('pointerdown', () => {
+    // Only register hits if he is still alive
+    if (this.mudom.health > 0) {
+        this.mudom.clicksTaken++;
+        
+        // Take away half his health per click (2 blows total)
+        this.mudom.health -= 5; 
+        console.log(`Mudom was clicked! Health left: ${this.mudom.health}`);
+
+        // Visual flash to show he took damage
+        this.mudom.setTint(0xff5555);
+        this.time.delayedCall(1500, () => {
+            if (this.mudom && this.mudom.active) this.mudom.clearTint();
+        });
+      
+      if (this.wallCollider) {
+                this.physics.world.removeCollider(this.wallCollider);
+                console.log("The massive wall has vanished! Path cleared.");
+            }
+
+            // 2. Clear out Mudom
+            this.mudom.destroy();
+
+        // Check if the 2 clicks killed him early
+        if (this.mudom.clicksTaken >= 2 || this.mudom.health <= 0) {
+            this.defeatMudom("Defeated by the Knight's blows!");
+          
+          
+        }
+      
+      this.invisibleWall = this.physics.add.staticSprite(288200, 400, "floor");
+
+// 2. Scale it vertically by 50x to make it completely un-jumpable!
+this.invisibleWall.setScale(2, 50); 
+this.invisibleWall.refreshBody();
+
+// 3. Keep it hidden from the player
+this.invisibleWall.setVisible(false);
+
+// 4. Force the player to collide with it
+this.wallCollider = this.physics.add.collider(this.player, this.invisibleWall);
+    }
+});
+
+
+  
   this.physics.add.collider(this.player, this.floorGroup);
+  
+   this.mukFloorGroup = this.physics.add.staticGroup();
+  
+  for (let mukFloor = 0; mukFloor < 866; mukFloor++) {
+    this.mukFloorGroup
+        .create(83240 + (mukFloor * 64 + 16), 700, "mukFloor")
+        .setScale(1)
+        .refreshBody();
+}
+  
+  for (let mukPlatforms = 0; mukPlatforms < 141; mukPlatforms++) {
+    let mukPlatform = this.physics.add.staticImage(
+        83240 + mukPlatforms * 496,
+        360,
+        "mukPlatform"
+    ).setScale(1)
+    mukPlatform.refreshBody()
+    
+    this.physics.add.collider(this.player, mukPlatform)
+  }
+  
+  for (let downMukPlatforms = 0; downMukPlatforms < 140; downMukPlatforms++) {
+    let mukPlatform7 = this.physics.add.staticImage(
+         83440 + downMukPlatforms * 496,
+         300,
+         "mukDownPlatform"
+    ).setScale(1)
+    mukPlatform7.refreshBody()
+  
+    this.physics.add.collider(this.player, mukPlatform7)
+  }
+  this.physics.add.collider(this.player, this.mukFloorGroup)
+  
+  
+  this.add.text(100, 200, "How to Play: use arrows or WASD and defeat bosses with clicks!", {
+    fontFamily: "Comic Sans MS",
+    fontSize: "32px",
+    fill: "#ff3300"
+  })
+  
+  this.add.text(200, 300, "KINGDOM OF PARKOUR: MUDDY HOLLOWS", {
+    fontFamily: "Comic Sans MS",
+    fontSize: "32px",
+    fill: "#442200"
+  })
+  
+   this.add.text(287000, 100, "BEWARE OF MUDOM, MUD BOMB THROWING MENANCE", {
+    fontFamily: "AR CARTER",
+    fontSize: "32px",
+    fill: "#990001"
+  })
   
   
   const platform1 = this.physics.add.staticImage(200, 600 ,"platformsThatGoUp").setScale(3)
@@ -103,7 +216,7 @@ this.mudBomb = null;
 }
 
 function update() {
-   if (this.player.x >= 166416 && !this.bossStarted) {
+   if (this.player.x >= 287930 && !this.bossStarted) {
     this.bossStarted = true;
 
     
@@ -148,15 +261,19 @@ function update() {
 }
   
   if (this.cursors.right.isDown) {
-    this.player.x += 5;
-  }
-
-  if (this.cursors.left.isDown) {
-    this.player.x -= 5;
-  }
+    this.player.setVelocityX(160); 
+} 
+// Move Left using physics velocity
+else if (this.cursors.left.isDown) {
+    this.player.setVelocityX(-160); 
+} 
+// Stop instantly when you let go of the keys (No sliding!)
+else {
+    this.player.setVelocityX(0); 
+}
 
  if (this.cursors.up.isDown && this.player.body.touching.down) {
-    this.player.setVelocityY(-320); // 👈 This makes them jump cleanly!
+    this.player.setVelocityY(-260); // 👈 This makes them jump cleanly!
 }
   
   this.waterfall.tilePositionY -= 4; 
@@ -165,7 +282,7 @@ function update() {
 const config = {
   type: Phaser.AUTO,
   height: 4000,
-  width: 1000,
+  width: 1400,
   backgroundColor: '#000000',
   physics: {
     default: 'arcade',
